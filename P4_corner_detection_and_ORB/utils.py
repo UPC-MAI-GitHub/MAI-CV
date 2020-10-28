@@ -1,36 +1,47 @@
-import numpy as np
 from matplotlib import pyplot as plt
-from skimage import color, data, feature, filters, io, transform
-from skimage.util import img_as_float
+from skimage import color, io, feature
 
-def plotImages(images:dict, title=None, figsize=(15, 9), **kwargs) -> None:
-    f, ax = plt.subplots(1, len(images), figsize=figsize)
-    if title is not None:
-        f.suptitle(title, fontsize=16)
-    for imageIdx, (title, image) in enumerate(images.items()):
-        ax[imageIdx].set_title(title)
-        ax[imageIdx].imshow(image, **kwargs)
-        ax[imageIdx].axis('off')
-    return f, ax
 
-def plotImageMatrix(images:dict, title=None, grid=(2, 2), figsize=(15, 9), **kwargs) -> None:
+def plotImages(images, grid=(2, 2), figsize=(15, 9), **kwargs):
     f, ax = plt.subplots(grid[0], grid[1], figsize=figsize)
-    if title is not None:
-        f.suptitle(title, fontsize=16)
     for imageIdx, (title, image) in enumerate(images.items()):
-        ax[imageIdx//grid[0]][imageIdx%grid[1]].set_title(title)
-        ax[imageIdx//grid[0]][imageIdx%grid[1]].imshow(image, **kwargs)
-        ax[imageIdx//grid[0]][imageIdx%grid[1]].axis('off')
+        if grid[0] == 1:
+            ax[imageIdx].set_title(title)
+            ax[imageIdx].imshow(image, **kwargs)
+            ax[imageIdx].axis('off')
+        else:
+            ax[imageIdx//grid[0]][imageIdx%grid[1]].set_title(title)
+            ax[imageIdx//grid[0]][imageIdx%grid[1]].imshow(image, **kwargs)
+            ax[imageIdx//grid[0]][imageIdx%grid[1]].axis('off')
     return f, ax
 
-def loadFloatImage(imagePath):
+def loadImage(imagePath, gray=False):
     image = io.imread(imagePath)
-    image = img_as_float(image)
+    if gray and len(image.shape) > 2:
+        image_gray = image
+        if image.shape[2] == 4:
+            image_gray = color.rgba2rgb(image_gray)
+        image_gray = color.rgb2gray(image_gray)
+        return image_gray
     return image
 
-def loadGrayFloatImage(imagePath):
-    image = loadFloatImage(imagePath)
-    if image.shape[2] > 3:
-        image = color.rgba2rgb(image)
-    image = color.rgb2gray(image)
+def imageToGray(image):
+    image = image.copy()
+    if len(image.shape) > 2:
+        if image.shape[2] == 4:
+            image = color.rgba2rgb(image)
+        image = color.rgb2gray(image)
     return image
+
+def plotDescriptors(images, grid=(2, 2), figsize=(15, 9), **kwargs):
+    f, ax = plt.subplots(grid[0], grid[1], figsize=figsize)
+    for imageIdx, (title, args) in enumerate(images.items()):
+        if grid[0] == 1:
+            ax[imageIdx].set_title(title)
+            feature.plot_matches(ax[imageIdx], *args, **kwargs)
+            ax[imageIdx].axis('off')
+        else:
+            ax[imageIdx//grid[1]][imageIdx%grid[1]].set_title(title)
+            feature.plot_matches(ax[imageIdx//grid[1]][imageIdx%grid[1]], *args, **kwargs)
+            ax[imageIdx//grid[1]][imageIdx%grid[1]].axis('off')
+    return f, ax
